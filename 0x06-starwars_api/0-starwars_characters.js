@@ -1,43 +1,56 @@
-#!/usr/bin/node
 const request = require('request');
 
-class StarWarsAPI {
-  constructor () {
-    if (process.argv.length < 3) {
-      throw new Error('you must pass the ID of film');
-    }
-    this.id = process.argv[2];
-    this.url = `https://swapi-api.alx-tools.com/api/films/${this.id}`;
+if (process.argv.length < 3) {
+  throw new Error('you must enter the id of the film');
+}
+const req = {
+  url: `https://swapi-api.alx-tools.com/api/films/${process.argv[2]}`,
+  method: 'GET',
+  headers: {
+    Accept: 'application/json',
+    'Accept-Charset': 'utf-8'
   }
-
-  handleRequest (error, response, body) {
-    if (error) {
-      throw new Error(error);
-    }
-    if (response.statusCode === 200) {
-      if (JSON.parse(body).characters) {
-        const characters = JSON.parse(body).characters;
-        for (const character of characters) {
-          this.url = character;
-          this.makeRequest();
+};
+function getCharacters (chr = null) {
+  return new Promise((resolve, reject) => {
+    if (chr !== null) {
+      req.url = chr;
+      request.get(req, (error, response, body) => {
+        if (error) {
+          throw new Error(error);
         }
-      } else if (JSON.parse(body).name) {
-        console.log(JSON.parse(body).name);
-      }
+        if (response.statusCode === 200) {
+          const nm = JSON.parse(body).name;
+          resolve(nm);
+        }
+      });
+    } else {
+      let characters;
+      request.get(req, (error, response, body) => {
+        if (error) {
+          throw new Error(error);
+        }
+        if (response.statusCode === 200) {
+          characters = JSON.parse(body).characters;
+          resolve(characters);
+        }
+      });
     }
-  }
+  });
+}
 
-  makeRequest () {
-    const req = {
-      url: this.url,
-      method: 'GET',
-      headers: {
-        Accept: 'application/json',
-        'Accept-Charset': 'utf-8'
-      }
-    };
-    request.get(req, this.handleRequest.bind(this));
+const reque = getCharacters();
+const data = reque.then((res) => {
+  return res;
+}).catch((err) => {
+  console.log(err);
+});
+async function main () {
+  const characters = await data;
+  for (let i = 0; i < characters.length; i++) {
+    const name = await getCharacters(characters[i]);
+    console.log(name);
   }
 }
-const obj = new StarWarsAPI();
-obj.makeRequest();
+
+main();
